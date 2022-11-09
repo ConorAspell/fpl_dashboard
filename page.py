@@ -1,10 +1,12 @@
 import dash_bootstrap_components as dbc
-import dash_html_components as html
+from dash import html
 import numpy as np
 import pandas as pd
-import dash_core_components as dcc
-import dash_table
+from dash import dcc
+from dash import dash_table
 from dash.dependencies import Input, Output
+
+from components.player_history import player_history
 columns = ['chance_of_playing_next_round', 'chance_of_playing_this_round',
        'element_type', 'ep_next', 'ep_this', 'first_name', 'form',
        'now_cost', 'points_per_game', 'second_name',
@@ -24,6 +26,8 @@ def page():
             value=''
         ),
         html.Button('Submit', id='submit-val', n_clicks=0),
+
+
         html.Div(id='container-button-basic',
                 children='Enter a value and press submit'),
         dash_table.DataTable(
