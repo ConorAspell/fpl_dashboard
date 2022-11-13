@@ -154,7 +154,31 @@ def update_output(n_clicks, value):
     [dash.dependencies.Input("multi-player-drop-down", "value")],
     [dash.dependencies.Input("stat-drop-down", "value")],
 )
-def render_page_content(player_names, stat):
+def sequential_graphs(player_names, stat):
+    if isinstance(player_names, str):
+        player_names = [player_names]
+    map=dict(zip(players_df.web_name, players_df.id))
+    team_map=dict(zip(players_df.team, players_df.team_name))
+    selected_players = pd.DataFrame()
+    for name in player_names:
+        id = map[name]
+        history = get("https://fantasy.premierleague.com/api/element-summary/"+str(id)+"/")
+        history = pd.DataFrame(history['history'])
+        history.opponent_team = history.opponent_team.map(team_map)
+        history['name'] = name
+        selected_players = selected_players.append(history)
+
+    fig = px.line(selected_players, x="round", y=stat, color='name')
+    fig2 = px.line(selected_players, x="round", y="value", color='name')
+    return fig, fig2
+
+@app.callback(
+    [dash.dependencies.Output("cumulative-scoring-2", "figure")],
+    [dash.dependencies.Output("player-price-2", "figure")],
+    [dash.dependencies.Input("multi-player-drop-down-2", "value")],
+    [dash.dependencies.Input("cum-stat-drop-down", "value")],
+)
+def cumulative_graphs(player_names, stat):
     if isinstance(player_names, str):
         player_names = [player_names]
     map=dict(zip(players_df.web_name, players_df.id))
