@@ -11,13 +11,21 @@ import requests
 from build import get_data, get
 import plotly.express as px
 
-from player_compare import player_compare
+from components.player_compare import player_compare
 
 df = pd.DataFrame()
 players_df, fixtures_df, gameweek, history, teams_df = get_data()
 pag = page()
 
 from components.navbar import Navbar
+
+columns = ['minutes',
+       'goals_scored', 'assists', 'clean_sheets', 'goals_conceded',
+       'own_goals', 'penalties_saved', 'penalties_missed', 'yellow_cards',
+       'red_cards', 'saves', 'bonus', 'bps', 'influence', 'creativity',
+       'threat', 'ict_index', 'starts', 'expected_goals', 'expected_assists',
+       'expected_goal_involvements', 'expected_goals_conceded', 'value',
+       'transfers_balance', 'selected', 'transfers_in', 'transfers_out']
 content = html.Div(id="page-content", children=[])
 nav = Navbar()
 def Homepage():
@@ -47,8 +55,8 @@ def update_scatter_chart(player_name):
     
     map=dict(zip(players_df.web_name, players_df.id))
     team_map=dict(zip(players_df.team, players_df.team_name))
-    id = map[player_name]
-    history = get("https://fantasy.premierleague.com/api/element-summary/"+str(id)+"/")
+    pid = map[player_name]
+    history = get("https://fantasy.premierleague.com/api/element-summary/"+str(pid)+"/")
     history = pd.DataFrame(history['history'])
     history.opponent_team = history.opponent_team.map(team_map)
 
@@ -67,12 +75,12 @@ def update_scatter_chart(player_name):
         player_score, x="round", y="total_points", 
         color="color", text="total_points", color_continuous_scale=[(0, "red"), (0.5, "yellow"), (1, "green")], labels="total_points", hover_data=['opponent_team'])
     
-    
+    hover_data={'species':False}
     fig.update_yaxes(range=[lowest-3, highest+3])  
     fig.update(layout_showlegend=False)
     fig.update_traces(textposition='top center')
     fig.update(layout_coloraxis_showscale=False)
-    
+    fig.update_layout(hovermode='x unified')
 
     fig2 = px.scatter(
         player_score, x="round", y="value", 
@@ -95,22 +103,21 @@ def update_player(player_name):
     selected_player = players_df.loc[players_df.web_name==player_name]
     code = selected_player.code.iat[0]
     image_string = "https://resources.premierleague.com/premierleague/photos/players/110x140/p" + str(code) + ".png"
-    ownership = "Ownership: " + str(selected_player.selected_by_percent.iat[0]) + "%"
-    rank = "ICT Rank: " + str(selected_player.ict_index_rank.iat[0])
+    ownership = str(selected_player.selected_by_percent.iat[0]) + "%"
+    rank = str(selected_player.ict_index_rank.iat[0])
 
-    return image_string, "Cost: " + str(selected_player.now_cost.iat[0]/10), "Total Points: " + str(selected_player.total_points.iat[0]), ownership, rank
+    return image_string, str(selected_player.now_cost.iat[0]/10), str(selected_player.total_points.iat[0]), ownership, rank
 
 @app.callback(
     dash.dependencies.Output("history_table", "children"), 
     [dash.dependencies.Input("player-drop-down", "value")]
     )
 def update_player_table(player_name):
-    
     selected_player = players_df.loc[players_df.web_name==player_name]
     return selected_player.total_points.iat[0]
 
 @app.callback(
-    [dash.dependencies.Output("player-drop-down", "options")],
+    dash.dependencies.Output("player-drop-down", "options"),
     [dash.dependencies.Input("team-drop-down", "value")],
     [dash.dependencies.Input("position-drop-down", "value")]
 )
@@ -123,21 +130,6 @@ def update_dropdown(team, position):
     players_1 = players_df.loc[players_df.team_name==team]
     players = players_1.loc[players_1.element_type==position]
     return players.web_name.unique()
-
-# @app.callback(
-#     [dash.dependencies.Output("multi-player-drop-down", "options")],
-#     [dash.dependencies.Input("multi-team-drop-down", "value")],
-#     [dash.dependencies.Input("multi-position-drop-down", "value")]
-# )
-# def update_dropdown(team, position):
-#     positions_map = {"Goalkeeper" : 1,
-#     "Defender" : 2,
-#     "Midfielder" : 3,
-#     "Forward" : 4}
-#     position = positions_map[position]
-#     players_1 = players_df.loc[players_df.team_name==team]
-#     players = players_1.loc[players_1.element_type==position]
-#     return players.web_name.unique()
 
 
 @app.callback(
@@ -156,13 +148,13 @@ def update_output(n_clicks, value):
         return my_team.to_dict("records")
     return []
 
-
 @app.callback(
-    [dash.dependencies.Output("cumulative-scoring-2", "figure")],
-    [dash.dependencies.Output("price-2", "figure")],
+    [dash.dependencies.Output("sequential-scoring", "figure")],
+    [dash.dependencies.Output("player-price", "figure")],
     [dash.dependencies.Input("multi-player-drop-down", "value")],
+    [dash.dependencies.Input("stat-drop-down", "value")],
 )
-def render_page_content(player_names):
+def render_page_content(player_names, stat):
     if isinstance(player_names, str):
         player_names = [player_names]
     map=dict(zip(players_df.web_name, players_df.id))
@@ -175,12 +167,14 @@ def render_page_content(player_names):
         history.opponent_team = history.opponent_team.map(team_map)
         history['name'] = name
         history['cum_sum'] = history['total_points'].cumsum()
+        for column in columns:
+            col_name = "cum_" + column
+            history[col_name] = history[column].cumsum()
         selected_players = selected_players.append(history)
 
-    fig = px.line(selected_players, x="round", y="cum_sum", color='name')
+    fig = px.line(selected_players, x="round", y=stat, color='name')
     fig2 = px.line(selected_players, x="round", y="value", color='name')
     return fig, fig2
-
 
 @app.callback(
     dash.dependencies.Output("page-content", "children"),

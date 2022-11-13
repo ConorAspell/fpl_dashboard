@@ -30,7 +30,9 @@ def player_history(players_df, teams_df):
     2 : "Defender",
     3 : "Midfielder",
     4 : "Forward"}
-    style_sheet = {"color": "black"}
+    style_sheet_1 = {"color": "black", "text-align" : "center", "font-family" : "Roboto"}
+    style_sheet_2 = {"color": "gray", "text-align" : "center", "font-family" : "Roboto"}
+    
     teams_map=dict(zip(teams_df.id, teams_df.name))
     players = players_df.web_name.unique()
     teams = players_df.team_name.unique()
@@ -56,8 +58,10 @@ def player_history(players_df, teams_df):
             dbc.Col(
                 dbc.Card(
                     dbc.CardBody([
-                        html.P("Ownership:\n " + str(selected_player.selected_by_percent.iat[0]) + "%", id="player_ownership",style=style_sheet),
-                        html.P("ICT Rank:\n " + str(selected_player.ict_index_rank.iat[0]), id="player_rank",style=style_sheet)], 
+                        html.P("Ownership: ",style=style_sheet_2),
+                        html.P(str(selected_player.selected_by_percent.iat[0]) + "%", id="player_ownership",style=style_sheet_1),
+                        html.P("ICT Rank: ",style=style_sheet_2),
+                        html.P(str(selected_player.ict_index_rank.iat[0]), id="player_rank",style=style_sheet_1)], 
                     style={"background-color" : "white"}
                 ), style={"width": "18rem", "border-radius" : "25px", "padding": "20px"}
             ), width={"size": 3, "offset" : 1}
@@ -66,8 +70,10 @@ def player_history(players_df, teams_df):
             dbc.Col(
                 dbc.Card(
                     dbc.CardBody([
-                        html.P("Cost:\n " + str(selected_player.now_cost.iat[0]/10), id="player_cost",style=style_sheet),
-                        html.P("Total Points:\n " + str(selected_player.total_points.iat[0]), id="player_points",style=style_sheet)], 
+                        html.P("Cost: ",style=style_sheet_2),
+                        html.P(str(selected_player.now_cost.iat[0]/10), id="player_cost",style=style_sheet_1),
+                        html.P("Total Points:\n ",style=style_sheet_2),
+                        html.P(str(selected_player.total_points.iat[0]), id="player_points",style=style_sheet_1)], 
                     style={"background-color" : "white"}
                 ), style={"width": "18rem", "border-radius" : "25px", "padding": "20px"}
             ), width={"size": 3, "offset" : 1}
