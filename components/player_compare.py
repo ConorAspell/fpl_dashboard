@@ -12,7 +12,7 @@ columns = ['total_points', 'minutes',
        'threat', 'ict_index', 'starts', 'expected_goals', 'expected_assists',
        'expected_goal_involvements', 'expected_goals_conceded', 'value',
        'transfers_balance', 'selected', 'transfers_in', 'transfers_out']
-cum_columns = [
+cum_columns = [ 'value',
        'cum_sum', 'cum_minutes', 'cum_goals_scored', 'cum_assists',
        'cum_clean_sheets', 'cum_goals_conceded', 'cum_own_goals',
        'cum_penalties_saved', 'cum_penalties_missed', 'cum_yellow_cards',
@@ -64,16 +64,19 @@ def player_compare(players_df, teams_df):
             dbc.Col(dcc.Dropdown(players, ['Haaland'], id='multi-player-drop-down',  multi=True)),
         ]),
         dcc.Graph(id="sequential-scoring"),
+        dbc.Col(dcc.Dropdown(columns, ['total_points'], id='stat-drop-down')),
         dcc.Graph(id="player-price")
         ]
         ),
         dcc.Tab(label='Cumulative', style=tab_style, selected_style=tab_selected_style,
         children = [
         dbc.Row([
-            dbc.Col(dcc.Dropdown(cum_columns, ['cum_sum'], id='cum-stat-drop-down')),
+            dbc.Col(dcc.Dropdown(cum_columns, value=['cum_sum'], id='cum-stat-drop-down')),
             dbc.Col(dcc.Dropdown(players, ['Haaland'], id='multi-player-drop-down-2',  multi=True)),
         ]),
             dcc.Graph(id="cumulative-scoring-2"),
+            dbc.Col(dcc.Dropdown(cum_columns, value=['value'], id='cum-stat-drop-down-2')),
+            
             dcc.Graph(id="player-price-2")
     ])
     ]

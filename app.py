@@ -1,7 +1,7 @@
 from turtle import title
 import dash
-from dash import dcc
-from dash import html
+from dash import dcc, html, ctx
+import json
 import numpy as np
 import pandas as pd
 import dash_bootstrap_components as dbc
@@ -52,7 +52,12 @@ server = app.server
     )
 def update_scatter_chart(player_name):
 
-    
+    ctx_msg = json.dumps({
+        'states': ctx.states,
+        'triggered': ctx.triggered,
+        'inputs': ctx.inputs
+    }, indent=2)
+
     map=dict(zip(players_df.web_name, players_df.id))
     team_map=dict(zip(players_df.team, players_df.team_name))
     pid = map[player_name]
@@ -177,28 +182,38 @@ def sequential_graphs(player_names, stat):
     [dash.dependencies.Output("player-price-2", "figure")],
     [dash.dependencies.Input("multi-player-drop-down-2", "value")],
     [dash.dependencies.Input("cum-stat-drop-down", "value")],
+    [dash.dependencies.Input("cum-stat-drop-down-2", "value")]
 )
-def cumulative_graphs(player_names, stat):
+def cumulative_graphs(player_names, stat, lower_stat):
+
+    ctx_msg = {
+        'states': ctx.states,
+        'triggered': ctx.triggered,
+        'inputs': ctx.inputs
+    }
+
     if isinstance(player_names, str):
         player_names = [player_names]
     map=dict(zip(players_df.web_name, players_df.id))
     team_map=dict(zip(players_df.team, players_df.team_name))
     selected_players = pd.DataFrame()
-    for name in player_names:
-        id = map[name]
-        history = get("https://fantasy.premierleague.com/api/element-summary/"+str(id)+"/")
-        history = pd.DataFrame(history['history'])
-        history.opponent_team = history.opponent_team.map(team_map)
-        history['name'] = name
-        history['cum_sum'] = history['total_points'].cumsum()
-        for column in columns:
-            col_name = "cum_" + column
-            history[col_name] = history[column].cumsum()
-        selected_players = selected_players.append(history)
+    if ctx.triggered[0]['prop_id']=='.' or ctx.triggered[0]['prop_id'] == "multi-player-drop-down-2.value":
+        for name in player_names:
+            id = map[name]
+            history = get("https://fantasy.premierleague.com/api/element-summary/"+str(id)+"/")
+            history = pd.DataFrame(history['history'])
+            history.opponent_team = history.opponent_team.map(team_map)
+            history['name'] = name
+            history['cum_sum'] = history['total_points'].cumsum()
+            for column in columns:
+                col_name = "cum_" + column
+                history[col_name] = history[column].cumsum()
+            selected_players = selected_players.append(history)
 
     fig = px.line(selected_players, x="round", y=stat, color='name')
-    fig2 = px.line(selected_players, x="round", y="value", color='name')
+    fig2 = px.line(selected_players, x="round", y=lower_stat, color='name')
     return fig, fig2
+
 
 @app.callback(
     dash.dependencies.Output("page-content", "children"),
