@@ -4,8 +4,10 @@ def Navbar():
            [
                 dbc.NavLink("Player History", href="/player"),
                 dbc.NavLink("Player Compare", href="/player_compare"),
-                dbc.NavLink("Your Team", href="/your-team"),
-                dbc.NavLink("Transfer Recommender", href="/transfer"),
+                dbc.NavLink("Upcoming Gameweek", href="/upcoming_gameweek"),
+                dbc.NavLink("Gameweek Review", href="/gameweek_review"),
+                dbc.NavLink("Your Team", href="/"),
+                dbc.NavLink("Transfer Recommender", href="/transfer_recommender"),
                 dbc.NavLink("Donate", href="/donate"),
               
                     ],

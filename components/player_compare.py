@@ -56,7 +56,9 @@ def player_compare(players_df, teams_df):
     positions = players_df.element_type.unique()
     positions = [positions_map[x] for x in positions]
     content = html.Div(children=[
+        dcc.Store(id='session', storage_type='session'),
     dcc.Tabs([
+
         dcc.Tab(label='Sequential', style=tab_style, selected_style=tab_selected_style,
         children =[
         dbc.Row([

@@ -8,13 +8,19 @@ import dash_bootstrap_components as dbc
 from components.player_history import player_history
 from page import page
 import requests
-from build import get_data, get
+from build import get_data, get, add_names, remove_names, add_seq_names
 import plotly.express as px
 
 from components.player_compare import player_compare
+from components.upcoming_gameweek import upcoming
+from components.team_change_recommender import change_recommender
+from components.gameweek_review import gameweek_review
+
+from dash.exceptions import PreventUpdate
+from flask_caching import Cache
 
 df = pd.DataFrame()
-players_df, fixtures_df, gameweek, history, teams_df = get_data()
+bet_df, players_df, fixtures_df, gameweek, history, teams_df = get_data()
 pag = page()
 
 from components.navbar import Navbar
@@ -41,8 +47,7 @@ app.title = 'FPL Data'
 app._favicon = ("C:\\Users\\lleps\\Documents\\projects-2022\\fpl_dashboard\\icon\\favicon.ico")
 app.layout = Homepage()
 server = app.server
-
-
+cache = Cache(app.server, config={'CACHE_TYPE': 'simple'})
 
 @app.callback(
     [dash.dependencies.Output("scatter-plot", "figure")], 
@@ -160,19 +165,22 @@ def update_output(n_clicks, value):
     [dash.dependencies.Input("stat-drop-down", "value")],
 )
 def sequential_graphs(player_names, stat):
-    if isinstance(player_names, str):
-        player_names = [player_names]
+    selected_players = pd.DataFrame()
+    if ctx.triggered[0]['prop_id']=='.' :
+        # store the selected players in the cache object
+        cache.set('selected_players', player_names)
+        names_to_add = player_names
+        
+    elif ctx.triggered[0]['prop_id'] == "multi-player-drop-down.value" or ctx.triggered[0]['prop_id']=='stat-drop-down.value':
+        cached_names = cache.get('selected_players')
+        selected_players = pd.DataFrame(cache.get('selected_playersdf'))
+        names_to_add = list(set(player_names) - set(cached_names)) 
+        
     map=dict(zip(players_df.web_name, players_df.id))
     team_map=dict(zip(players_df.team, players_df.team_name))
-    selected_players = pd.DataFrame()
-    for name in player_names:
-        id = map[name]
-        history = get("https://fantasy.premierleague.com/api/element-summary/"+str(id)+"/")
-        history = pd.DataFrame(history['history'])
-        history.opponent_team = history.opponent_team.map(team_map)
-        history['name'] = name
-        selected_players = selected_players.append(history)
 
+    selected_players = add_seq_names(selected_players, names_to_add, map, team_map)
+    selected_players = remove_names(selected_players, player_names)
     fig = px.line(selected_players, x="round", y=stat, color='name')
     fig2 = px.line(selected_players, x="round", y="value", color='name')
     return fig, fig2
@@ -186,33 +194,63 @@ def sequential_graphs(player_names, stat):
 )
 def cumulative_graphs(player_names, stat, lower_stat):
 
-    ctx_msg = {
-        'states': ctx.states,
-        'triggered': ctx.triggered,
-        'inputs': ctx.inputs
-    }
-
     if isinstance(player_names, str):
         player_names = [player_names]
-    map=dict(zip(players_df.web_name, players_df.id))
-    team_map=dict(zip(players_df.team, players_df.team_name))
     selected_players = pd.DataFrame()
-    if ctx.triggered[0]['prop_id']=='.' or ctx.triggered[0]['prop_id'] == "multi-player-drop-down-2.value":
-        for name in player_names:
-            id = map[name]
-            history = get("https://fantasy.premierleague.com/api/element-summary/"+str(id)+"/")
-            history = pd.DataFrame(history['history'])
-            history.opponent_team = history.opponent_team.map(team_map)
-            history['name'] = name
-            history['cum_sum'] = history['total_points'].cumsum()
-            for column in columns:
-                col_name = "cum_" + column
-                history[col_name] = history[column].cumsum()
-            selected_players = selected_players.append(history)
+    if ctx.triggered[0]['prop_id']=='.' :
+        # store the selected players in the cache object
+        cache.set('selected_players', player_names)
+        names_to_add = player_names
+        selected_players = pd.DataFrame()
+    elif ctx.triggered[0]['prop_id'] == "multi-player-drop-down-2.value" or ctx.triggered[0]['prop_id']=='cum-stat-drop-down.value' or ctx.triggered[0]['prop_id']=='cum-stat-drop-down-2.value':
+        cached_names = cache.get('selected_players')
+        selected_players = pd.DataFrame(cache.get('selected_playersdf'))
+        names_to_add = list(set(player_names) - set(cached_names)) 
+
+    map=dict(zip(players_df.web_name, players_df.id))
+    
+    team_map=dict(zip(players_df.team, players_df.team_name))
+    # if ctx.triggered[0]['prop_id']=='.' or ctx.triggered[0]['prop_id'] == "multi-player-drop-down-2.value" or ctx.triggered[0]['prop_id']=='cum-stat-drop-down.value':
+    selected_players = add_names(selected_players, names_to_add,map, team_map)
+    selected_players = remove_names(selected_players, player_names)
+    cache.set('selected_players', player_names)
+    cache.set('selected_playersdf', selected_players.to_dict('records'))
+    
 
     fig = px.line(selected_players, x="round", y=stat, color='name')
     fig2 = px.line(selected_players, x="round", y=lower_stat, color='name')
     return fig, fig2
+
+@app.callback(
+    dash.dependencies.Output('team-table', 'data'),
+    [dash.dependencies.Input('fpl-id', 'value')]
+)
+def update_table(FPL_ID):
+    # Set the default value of the FPL ID input to 123456 if the input is blank
+    if not FPL_ID:
+        FPL_ID = 123456
+
+    positions_map = {1 : "Goalkeeper",
+    2 : "Defender" ,
+    3 : "Midfielder",
+    4 : "Forward" }
+
+    # Get the user's team data from the Fantasy Premier League API
+    response = requests.get(f'https://fantasy.premierleague.com/api/entry/{FPL_ID}/event/16/picks/')
+    data = response.json()
+
+    # Make a request to the bootstrap-static endpoint and pick out the player data for each player in the user's team
+    player_ids = [p['element'] for p in data['picks']]
+    player_data = players_df.loc[players_df['id'].isin(player_ids)]
+    player_data = player_data.sort_values('element_type')
+    player_data['element_type'] =  player_data['element_type'].map(positions_map)
+
+    player_data = player_data.to_dict('records')
+    # Create a list of dictionaries with the player data
+    players = [{'name': p['first_name'] + ' ' + p['second_name'], 'position': p['element_type'], 'team': p['team_name'], 'cost': p['now_cost'] / 10} for p in player_data]
+
+    # Return the player data for the table
+    return players
 
 
 @app.callback(
@@ -222,32 +260,23 @@ def cumulative_graphs(player_names, stat, lower_stat):
 def render_page_content(pathname):
     if pathname == "/":
         return [
-                html.H1('Kindergarten in Iran',
-                        style={'textAlign':'center'}),
-                
+                html.H1('ERROR PAGE',
+                        style={'textAlign':'center'}),                
                 ]
     elif pathname == "/player":
         return player_history(players_df, teams_df)
 
     elif pathname == "/player_compare":
         return player_compare(players_df, teams_df)
+    
+    elif pathname == "/upcoming_gameweek":
+        return upcoming(bet_df, players_df, teams_df)
+    
+    elif pathname == "/transfer_recommender":
+        return change_recommender()
 
-    # elif pathname == "/sign-ups":
-    #     return [
-    #             html.H1('SIGN UPS',
-    #                     style={'textAlign':'center'}),
-                
-    #             ]
-    # elif pathname == "/donate":
-    #     return [
-    #             html.H1('DONATE',
-    #                     style={'textAlign':'center'}),
-                
-    #             ]
-    # elif pathname == "/tournament":
-    #     return [
-    #             html.H1('TOURNAMENT',
-    #                     style={'textAlign':'center'}),]
+    elif pathname == "/gameweek_review":
+        return gameweek_review(players_df,teams_df, fixtures_df)
                 
     # If the user tries to reach a different page, return a 404 message
     return dbc.Jumbotron(
