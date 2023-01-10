@@ -141,23 +141,6 @@ def update_dropdown(team, position):
     players = players_1.loc[players_1.element_type==position]
     return players.web_name.unique()
 
-
-@app.callback(
-    dash.dependencies.Output('team_data', 'data'),
-    [dash.dependencies.Input('submit-val', 'n_clicks')],
-    [dash.dependencies.State('input-on-submit', 'value')],
-    prevent_initial_call=True)
-def update_output(n_clicks, value):
-    if len(value) >= 6:
-        team = get('https://fantasy.premierleague.com/api/entry/'+str(value)+'/event/'+str(gameweek-1) +'/picks/')
-        players = [x['element'] for x in team['picks']]
-
-        my_team = players_df.loc[players_df.id.isin(players)]
-        potential_players = players_df.loc[~players_df.id.isin(players)]
-        
-        return my_team.to_dict("records")
-    return []
-
 @app.callback(
     [dash.dependencies.Output("sequential-scoring", "figure")],
     [dash.dependencies.Output("player-price", "figure")],
@@ -252,6 +235,44 @@ def update_table(FPL_ID):
     # Return the player data for the table
     return players
 
+@app.callback(
+    dash.dependencies.Output("home-table", 'data'),
+    [dash.dependencies.State('gameweek-drop-down', 'value')],
+    [dash.dependencies.Input('game-drop-down', 'value')]
+)
+def update_gameweek_review(gameweek, fixture_title):
+    fixtures = get('https://fantasy.premierleague.com/api/fixtures/?event='+str(gameweek))
+    fixture_id = int(fixture_title.split(':')[0])
+    fixture = next(fixture for fixture in fixtures if fixture['id'] == fixture_id)
+    away_players = []
+    home_players = []
+    for player in fixture['stats'][-1]['a']:
+        history = get("https://fantasy.premierleague.com/api/element-summary/"+str(player['element'])+"/")
+        his = next(f for f in history['history'] if f['fixture'] == fixture_id)
+        away_players.append(his)
+    for player in fixture['stats'][-1]['h']:
+        history = get("https://fantasy.premierleague.com/api/element-summary/"+str(player['element'])+"/")
+        his = next(f for f in history['history'] if f['fixture'] == fixture_id)
+        home_players.append(his)
+
+    return home_players
+
+@app.callback(
+    [dash.dependencies.Output("game-drop-down", "options"),
+    dash.dependencies.Output("game-drop-down", "value")],
+    [dash.dependencies.Input("gameweek-drop-down", "value")],
+)
+def update_dropdown(gameweek):
+    fixtures = get('https://fantasy.premierleague.com/api/fixtures/?event='+str(gameweek))
+    team_map=dict(zip(players_df.team, players_df.team_name))
+    f_df = pd.DataFrame(fixtures)
+    f_df['team_a_name'] = f_df['team_a'].map(team_map)
+    f_df['team_h_name'] = f_df['team_h'].map(team_map)
+    f_df['fixture_title'] = f_df['id'].astype(str) + ": " + f_df['team_h_name'] + " v " + f_df['team_a_name']
+    f_df = f_df.sort_values('id')
+    f_df = f_df.loc[f_df.finished==True]
+    options = [{'label': d['fixture_title'], 'value': d['fixture_title']} for d in f_df.to_dict('records')]
+    return options, options[0]['value']
 
 @app.callback(
     dash.dependencies.Output("page-content", "children"),
@@ -276,7 +297,7 @@ def render_page_content(pathname):
         return change_recommender()
 
     elif pathname == "/gameweek_review":
-        return gameweek_review(players_df,teams_df, fixtures_df)
+        return gameweek_review(players_df,teams_df, gameweek-1)
                 
     # If the user tries to reach a different page, return a 404 message
     return dbc.Jumbotron(
