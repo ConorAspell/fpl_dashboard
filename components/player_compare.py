@@ -66,7 +66,7 @@ def player_compare(players_df, teams_df):
             dbc.Col(dcc.Dropdown(players, ['Haaland'], id='multi-player-drop-down',  multi=True)),
         ]),
         dcc.Graph(id="sequential-scoring"),
-        dbc.Col(dcc.Dropdown(columns, ['total_points'], id='stat-drop-down')),
+        dbc.Col(dcc.Dropdown(columns, ['total_points'], id='stat-drop-down-2')),
         dcc.Graph(id="player-price")
         ]
         ),

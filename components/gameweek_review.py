@@ -70,6 +70,16 @@ def gameweek_review(players_df, teams_df, gameweek):
     away_players_df['photo'] = image_url_prefix + away_players_df['photo'].str.slice(start=0, stop=-3) + 'png'
     home_players_df['photo'] = image_url_prefix + home_players_df['photo'].str.slice(start=0, stop=-3) + 'png'
 
+    away_players_df.loc[away_players_df['total_points_y'] < 3, "color" ] = 0
+    away_players_df.loc[away_players_df['total_points_y'] >= 3, "color" ] = 1
+    away_players_df.loc[away_players_df['total_points_y'] > 6, "color" ] = 2
+    away_players_df.loc[away_players_df['total_points_y'] > 9, "color" ] = 3
+
+    home_players_df.loc[home_players_df['total_points_y'] < 3, "color" ] = 0
+    home_players_df.loc[home_players_df['total_points_y'] >= 3, "color" ] = 1
+    home_players_df.loc[home_players_df['total_points_y'] > 6, "color" ] = 2
+    home_players_df.loc[home_players_df['total_points_y'] > 9, "color" ] = 3
+
     away_players_df = away_players_df.sort_values('minutes_y', ascending=False)
     away_players_df_starters = away_players_df.iloc[:11]
     away_players_subs = away_players_df.iloc[11:]
@@ -83,121 +93,133 @@ def gameweek_review(players_df, teams_df, gameweek):
     away_midfielder = away_players_df_starters.loc[away_players_df_starters.element_type==3]
     away_forward = away_players_df_starters.loc[away_players_df_starters.element_type==4]
 
+    if away_forward.empty:
+        row = away_midfielder.iloc[-1]
+        away_forward = pd.DataFrame([row])
+        away_midfielder = away_midfielder.drop(away_midfielder.index[-1])
+
     home_goalkeeper = home_players_df_starters.loc[home_players_df_starters.element_type==1]
     home_defender = home_players_df_starters.loc[home_players_df_starters.element_type==2]
     home_midfielder = home_players_df_starters.loc[home_players_df_starters.element_type==3]
     home_forward = home_players_df_starters.loc[home_players_df_starters.element_type==4]
 
-    
+    if home_forward.empty:
+        row = home_midfielder.iloc[-1]
+        home_forward = pd.DataFrame([row])
+        home_midfielder = home_midfielder.drop(home_midfielder.index[-1])
+
+    home_df_list = [home_goalkeeper, home_defender, home_midfielder, home_forward]
+    away_df_list = [away_forward, away_midfielder, away_defender, away_goalkeeper]
     height = '50%'
     width = "50%"
+    away_cards = []
+    for df in away_df_list:
+        card = dbc.Col(children=[
+            
+            html.Div([
+                html.Div([
+                    html.Img(
+                        src='{}'.format(row.photo), 
+                        style={
+                            'border-radius': '100%', 
+                            'height': '40%', 
+                            'width': '55%'
+                        }      
+                    ),
+                    html.P('{}'.format(row.total_points_y), style={"color": row.color})
+                ])
+                for i, row in df.iterrows()
+            ])],
+            width=3, align='center'
+        )
+        away_cards.append(card)
+    
+    home_cards = []
+    for df in home_df_list:
+        card = dbc.Col(children=[
+            
+                html.Div([
+                    html.Div([
+                        html.Img(
+                            src='{}'.format(row.photo), 
+                            style={
+                                'border-radius': '100%', 
+                                'height': '40%', 
+                                'width': '55%'
+                            }      
+                        ),
+                        html.P('{}'.format(row.total_points_y), style={"color": row.color})
+                    ])
+                    for i, row in df.iterrows()
+                ])],
+            width=3, align='center'
+        )
+        home_cards.append(card)
+
+    home_sub_cards=[]
+
+    for i, row in home_players_subs.iterrows():
+        card = dbc.Col(children=[
+            html.Img(
+                src='{}'.format(row.photo), 
+                style={
+                    'border-radius': '100%', 
+                    'height': '40%', 
+                    'width': '55%'
+                }
+            ),
+            html.P('{}'.format(row.total_points_y), style={"color": row.color})
+        ], width=3, align='center')
+        home_sub_cards.append(card)
+    
+    away_sub_cards=[]
+
+    for i, row in away_players_subs.iterrows():
+        card = dbc.Col(children=[
+            html.Img(
+                src='{}'.format(row.photo), 
+                style={
+                    'border-radius': '100%', 
+                    'height': '40%', 
+                    'width': '55%'
+                }
+            ),
+            html.P('{}'.format(row.total_points_y), style={"color": row.color})
+        ], width=3, align='center')
+        away_sub_cards.append(card)
+
+
     layout = html.Div(
         children=[html.Div([
+
                 dbc.Row([
                     dbc.Col(dcc.Dropdown(list(range(1, gameweek+1)),value=gameweek,id='gameweek-drop-down',placeholder="Select Gameweek")),
                     dbc.Col(dcc.Dropdown(ids,value=ids[0], id='game-drop-down', placeholder="Select Fixture"))
                 ])
             ]),
-            html.Div(style= {  'verticalAlign':'middle',
+            html.Div(style= {  
+                        'verticalAlign':'middle',
                         'textAlign': 'center',
                         'background': 'url(https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Football_pitch_v2.svg/2560px-Football_pitch_v2.svg.png) no-repeat center center fixed',
-                        'background-size': 'cover'}, 
-                children=[
-                    dbc.Row([
-                    dbc.Col(width=6, children=[
-                    dbc.Row([                    
-                            dbc.Col( width=3,
-                                children=[
-                                    html.Div(
-                                    html.Img(src='{}'.format(field), style={'border-radius' : '500%', 'height' : height, 'width' : width})
-                                    ) for field in home_goalkeeper.photo.to_list()
-                                ], align='center' ),
-                            dbc.Col(width=3,
-                                children=[
-                                    html.Div(
-                                    html.Img(src='{}'.format(field), style={'border-radius' : '500%','height' : height, 'width' : width})
-                                    ) for field in home_defender.photo.to_list()
-                                ], align='center'),
-                            dbc.Col(width=3,
-                                children=[
-                                    html.Div(
-                                    html.Img(src='{}'.format(field), style={'border-radius' : '500%','height' : height, 'width' : width})
-                                    ) for field in home_midfielder.photo.to_list()
-                                ], align='center'),
-                                dbc.Col(width=3,
-                                children=[
-                                    html.Div(
-                                    html.Img(src='{}'.format(field), style={'border-radius' : '500%','height' : height, 'width' : width})
-                                    ) for field in home_forward.photo.to_list()
-                                ], align='center') 
-
-                    ], justify="start"),
-                    ]),
-                    dbc.Col(width=6, children=[
-                    dbc.Row([                    
-                            dbc.Col( width=3,
-                                children=[
-                                    html.Div(
-                                    html.Img(src='{}'.format(field), style={'border-radius' : '500%', 'height' : height, 'width' : width})
-                                    ) for field in away_forward.photo.to_list()
-                                ], align='center' ),
-                            dbc.Col(width=3,
-                                children=[
-                                    html.Div(
-                                    html.Img(src='{}'.format(field), style={'border-radius' : '500%','height' : height, 'width' : width})
-                                    ) for field in away_midfielder.photo.to_list()
-                                ], align='center'),
-                            dbc.Col(width=3,
-                                children=[
-                                    html.Div(
-                                    html.Img(src='{}'.format(field), style={'border-radius' : '500%','height' : height, 'width' : width})
-                                    ) for field in away_defender.photo.to_list()
-                                ], align='center'),
-                                dbc.Col(width=3,
-                                children=[
-                                    html.Div(
-                                    html.Img(src='{}'.format(field), style={'border-radius' : '500%','height' : height, 'width' : width})
-                                    ) for field in away_goalkeeper.photo.to_list()
-                                ], align='center') 
-
-                    ], justify="end"),
-                    ])
-                    ])
-                    
-
-                    # ]),
-                    # dbc.Col(width=3, children= [
-                    #     dbc.Row(children=[
-                    #         dbc.Row(html.Img(src='{}'.format(field), style={'height' :'75%','width' : '75%'}),style={'height': height})
-                    #     ]) for field in home_midfielder.photo.to_list()
-                    # ]),
-                    # dbc.Col(width=3, children= [
-                    #     dbc.Row(children=[
-                    #         dbc.Row(html.Img(src='{}'.format(field), style={'height' :'75%','width' : '75%'}),style={'height': height})
-                    #     ]) for field in home_forward.photo.to_list()
-                    # ]),
-                    # dbc.Col(width=3, children= [
-                    #     dbc.Row(children=[
-                    #         dbc.Row(html.Img(src='{}'.format(field), style={'height' :'75%','width' : '75%'}),style={'height': height})
-                    #     ]) for field in away_forward.photo.to_list()
-                    # ]),
-                    # dbc.Col(width=3, children= [
-                    #     dbc.Row(children=[
-                    #         dbc.Row(html.Img(src='{}'.format(field), style={'height' :'75%','width' : '75%'}),style={'height': height})
-                    #     ]) for field in away_midfielder.photo.to_list()
-                    # ]),
-                    # dbc.Col(width=3, children= [
-                    #     dbc.Row(children=[
-                    #         dbc.Row(html.Img(src='{}'.format(field), style={'height' :'75%','width' : '75%'}),style={'height': height})
-                    #     ]) for field in away_defender.photo.to_list()
-                    # ]),
-                    # dbc.Col(width=3, children= [
-                    #     dbc.Row(children=[
-                    #         dbc.Row(html.Img(src='{}'.format(field), style={'height' :'75%','width' : '75%'}),style={'height': height})
-                    #     ]) for field in away_goalkeeper.photo.to_list()
-               
-                    
-            ])    
-        ]
-    )
+                        'background-size': 'cover'}, children=[ 
+                dbc.Row([
+                    dbc.Col(width=6,  children=[
+                            dbc.Row(                                  
+                                home_cards, justify='end'                                
+                            ),
+                            dbc.Row(
+                            home_sub_cards
+                            )
+                            
+                        ]),
+                    dbc.Col(width=6,  children=[
+                            dbc.Row(                                  
+                                away_cards, justify='end'                                
+                            ),
+                            dbc.Row(
+                            away_sub_cards
+                            )
+                        ])]),]
+            )])        
+           
     return layout

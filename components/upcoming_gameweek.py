@@ -28,7 +28,9 @@ def upcoming(bet_df, players_df, teams_df):
     graph2_df= graph2_df.loc[graph2_df.chance_of_playing_this_round!=0]
 
     graph2_df['ranking'] = graph2_df['creativity'] + graph2_df['influence'] + graph2_df['threat'] - (graph2_df['diff']*20) - (100-graph2_df['chance_of_playing_this_round']) + (graph2_df['form']*20)
-    graph2_df = graph2_df.sort_values('ranking', ascending=False).iloc[:25]
+    graph2_df=graph2_df[['web_name','element_type', 'ranking']]
+    graph2_df=graph2_df.groupby(['web_name', 'element_type']).sum()
+    graph2_df = graph2_df.sort_values('ranking', ascending=False).iloc[:20].reset_index()
     fig = px.bar(graph_df, x='team', y='chance',
              color='opponent',title=title )
     fig2 = px.bar(graph2_df, x='web_name', y='ranking',
