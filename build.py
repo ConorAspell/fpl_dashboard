@@ -79,7 +79,25 @@ def get_data():
 
     history = get('https://fantasy.premierleague.com/api/element-summary/318/')
     history_df = pd.DataFrame(history['history'])
-    return bet_df, players_df, fixtures_df, gameweek, history_df,teams_df
+
+    all_history_df = load_player_data_from_s3('fpl-bucket-2022', 'player_data.json')
+
+    return bet_df, players_df, fixtures_df, gameweek, history_df,teams_df, all_history_df
+
+
+def load_player_data_from_s3(bucket_name, file_name):
+    """
+    Loads the player data from the specified S3 bucket and file name and returns it as a list of dictionaries.
+    """
+    s3 = boto3.resource('s3')
+    obj = s3.Object(bucket_name, file_name)
+    response = obj.get()
+
+    player_data = json.loads(response['Body'].read().decode('utf-8'))
+
+    return player_data
+
+
 
 def get(url):
     response = requests.get(url)

@@ -1,5 +1,4 @@
-from dash import html, dcc, Dash
-import dash_table
+from dash import html, dcc, Dash, dash_table
 import requests
 from dash.dependencies import Input, Output
 
