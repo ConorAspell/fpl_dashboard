@@ -263,10 +263,22 @@ def update_gameweek_review(gameweek, fixture_title):
     home_players = []
     for p_history in all_history_df:
         if p_history['id'] in away_ids:
-            game = next(x for x in p_history['history'] if x['fixture'] == fixture_id)          
+            try:
+                game = next(x for x in p_history['history'] if x['fixture'] == fixture_id)
+            except StopIteration:
+                print(f"Unable to find fixture {fixture_id} in player history.")
+            except Exception as e:
+                print(f"An error occurred while searching for fixture {fixture_id}: {str(e)}")
+
             away_players.append(game)
         elif p_history['id'] in home_ids:
-            game = next(x for x in p_history['history'] if x['fixture'] == fixture_id)
+            try:
+                game = next(x for x in p_history['history'] if x['fixture'] == fixture_id)
+            except StopIteration:
+                print(f"Unable to find fixture {fixture_id} in player history.")
+            except Exception as e:
+                print(f"An error occurred while searching for fixture {fixture_id}: {str(e)}")
+
             home_players.append(game)
 
     team_map=dict(zip(players_df.team, players_df.team_name))
@@ -428,6 +440,18 @@ def update_dropdown(gameweek):
     f_df = f_df.loc[f_df.finished_provisional==True]
     options = [{'label': d['fixture_title'], 'value': d['fixture_title']} for d in f_df.to_dict('records')]
     return options, options[0]['value']
+
+# @app.callback(
+#     dash.dependencies.Output('player-chart', 'figure'),
+#     [dash.dependencies.Input('element-type', 'value')]
+# )
+# def update_fig2(element_type):
+#     graph2_df = 
+#     graph2_df = graph2_df.loc[graph2_df.element_type == element_type]
+
+#     fig2 = px.bar(graph2_df, x='web_name', y='ranking', color='element_type')
+
+#     return fig2
 
 @app.callback(
     dash.dependencies.Output("page-content", "children"),

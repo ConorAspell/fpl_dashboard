@@ -3,7 +3,8 @@ import pandas  as pd
 import json
 from datetime import datetime
 import boto3
-from io import StringIO
+import io
+
 
 columns = ['chance_of_playing_next_round', 'chance_of_playing_this_round',
  'element_type', 'ep_next',
@@ -27,55 +28,24 @@ cum_columns = ['minutes',
 s3_client = boto3.client('s3')
 
 def get_data():
-    today = datetime.now()
-    positions_map = {1 : "Goalkeeper",
-    2 : "Defender" ,
-    3 : "Midfielder",
-    4 : "Forward" }
+    today = datetime.now().timestamp()
     
-
     players =  get('https://fantasy.premierleague.com/api/bootstrap-static/')
-    players_df = pd.DataFrame(players['elements'])
     teams_df = pd.DataFrame(players['teams'])
     fixtures_df = pd.DataFrame(players['events'])
-    today = datetime.now().timestamp()
     fixtures_df = fixtures_df.loc[fixtures_df.deadline_time_epoch>today]
     gameweek =  fixtures_df.iloc[0].id
 
+    key = "odds-gameweek-" +str(gameweek) +".csv"
+    bucket_name = "fpl-bucket-2023"
+    bet_df = get_df(bucket_name, key)
 
-    key = "gameweek-" +str(gameweek) +".csv"
-    bucket_name = "odds-bucket-conora"
-    resp = s3_client.get_object(Bucket=bucket_name, Key=key)
-    bet_df = pd.read_csv(resp['Body'], sep=',')
-    # bet_df = bet_df.iloc[11:]
+    key = "players-gameweek-" +str(gameweek) +".csv"
+    players_df = get_df(bucket_name, key)
+
+
     bet_df.reset_index(inplace=True)
-    bet_df['home_chance'] = 100/bet_df['home_odds']
-    bet_df['away_chance'] = 100/bet_df['away_odds']
     bet_df['game_week'] = gameweek
-
-    players_df.chance_of_playing_next_round = players_df.chance_of_playing_next_round.fillna(100.0)
-    players_df.chance_of_playing_this_round = players_df.chance_of_playing_this_round.fillna(100.0)
-    fixtures = get('https://fantasy.premierleague.com/api/fixtures/?event='+str(gameweek))
-    fixtures_df = pd.DataFrame(fixtures)
-
-    fixtures_df['home_chance'] = bet_df['home_chance']
-    fixtures_df['away_chance'] = bet_df['away_chance']
-
-    fixtures_df=fixtures_df.drop(columns=['id'])
-    teams=dict(zip(teams_df.id, teams_df.name))
-    players_df['team_name'] = players_df['team'].map(teams)
-    fixtures_df['team_a_name'] = fixtures_df['team_a'].map(teams)
-    fixtures_df['team_h_name'] = fixtures_df['team_h'].map(teams)
-
-    fixtures_df = fixtures_df.drop(columns=['code', 'minutes'])
-
-    a_players = pd.merge(players_df, fixtures_df, how="inner", left_on=["team"], right_on=["team_a"])
-    h_players = pd.merge(players_df, fixtures_df, how="inner", left_on=["team"], right_on=["team_h"])
-
-    a_players['diff'] = a_players['away_chance'] - a_players['home_chance']
-    h_players['diff'] = h_players['home_chance'] - h_players['away_chance']
-
-    players_df = a_players.append(h_players)
 
     history = get('https://fantasy.premierleague.com/api/element-summary/318/')
     history_df = pd.DataFrame(history['history'])
@@ -97,7 +67,11 @@ def load_player_data_from_s3(bucket_name, file_name):
 
     return player_data
 
-
+def get_df(bucket, key):
+    s3 = boto3.client('s3')
+    obj = s3.get_object(Bucket=bucket, Key=key)
+    df = pd.read_csv(io.BytesIO(obj['Body'].read()))
+    return df
 
 def get(url):
     response = requests.get(url)
