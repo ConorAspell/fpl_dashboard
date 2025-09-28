@@ -3,21 +3,32 @@ from dash import html
 import dash_bootstrap_components as dbc
 import pandas as pd
 from build import get
+import json
 
 def register_gameweek_callbacks(app, players_df, teams_df, all_history_df):
     """Register all gameweek-related callbacks"""
     
     @app.callback(
-        [dash.dependencies.Output("home-team", 'children')],
-        [dash.dependencies.Output("away-team", 'children')],
-        [dash.dependencies.State('gameweek-drop-down', 'value')],
-        [dash.dependencies.Input('game-drop-down', 'value')]
+        [dash.dependencies.Output("home-gk", 'children'),
+         dash.dependencies.Output("home-def", 'children'),
+         dash.dependencies.Output("home-mid", 'children'),
+         dash.dependencies.Output("home-fwd", 'children'),
+         dash.dependencies.Output("away-fwd", 'children'),
+         dash.dependencies.Output("away-mid", 'children'),
+         dash.dependencies.Output("away-def", 'children'),
+         dash.dependencies.Output("away-gk", 'children'),
+         dash.dependencies.Output("all-subs", 'children'),
+         dash.dependencies.Output('home-players-data', 'data'),
+         dash.dependencies.Output('away-players-data', 'data'),
+         dash.dependencies.Output('game-data', 'data')],
+        [dash.dependencies.Input('gameweek-drop-down', 'value'),
+         dash.dependencies.Input('game-drop-down', 'value')]
     )
     def update_gameweek_review(gameweek, fixture_title):
         
         fixture_id = int(fixture_title.split(" ")[0])
         teams=dict(zip(teams_df.id, teams_df.name))
-        image_url_prefix = 'https://resources.premierleague.com/premierleague/photos/players/110x140/p'
+        image_url_prefix = 'https://resources.premierleague.com/premierleague25/photos/players/110x140/'
         fixtures = get('https://fantasy.premierleague.com/api/fixtures/?event='+str(gameweek))
 
         fixture = next(fixture for fixture in fixtures if fixture['id'] == fixture_id)
@@ -55,13 +66,18 @@ def register_gameweek_callbacks(app, players_df, teams_df, all_history_df):
         
         away_df = pd.DataFrame(away_players)
         home_df = pd.DataFrame(home_players)
+        
         away_df['id_x'] = away_df['element']
         home_df['id_x'] = home_df['element']
+
         away_players_df = pd.merge(players_df, away_df, how='inner', on=["id_x"] )
         home_players_df = pd.merge(players_df, home_df, how='inner', on=["id_x"] )
+        
         away_players_df['photo'] = image_url_prefix + away_players_df['photo'].str.slice(start=0, stop=-3) + 'png'
         home_players_df['photo'] = image_url_prefix + home_players_df['photo'].str.slice(start=0, stop=-3) + 'png'
 
+
+        game_df = pd.concat([away_players_df, home_players_df], ignore_index=True)
         away_players_df = away_players_df.sort_values('minutes', ascending=False)
         away_players_df_starters = away_players_df.iloc[:11]
         away_players_subs = away_players_df.iloc[11:]
@@ -90,104 +106,131 @@ def register_gameweek_callbacks(app, players_df, teams_df, all_history_df):
             home_forward = pd.DataFrame([row])
             home_midfielder = home_midfielder.drop(home_midfielder.index[-1])
 
-        home_df_list = [home_goalkeeper, home_defender, home_midfielder, home_forward]
-        away_df_list = [away_forward, away_midfielder, away_defender, away_goalkeeper]
+        home_gk_content = html.Div([
+            html.Div([
+                html.Img(
+                    src=row.photo,
+                    id={'type': 'player-image', 'player_id': row.element},
+                    style={'border-radius': '100%', 'height': '50px', 'width': '50px'}
+                ),
+                html.P(row.total_points_y, style={"color": "white"})
+            ]) for row in home_goalkeeper.itertuples()
+        ], style={'textAlign': 'center'})
 
-        away_cards = []
-        for df in away_df_list:
-            card = dbc.Col(children=[
-                
-                html.Div([
-                    html.Div([
-                        html.Img(
-                            src='{}'.format(row.photo), 
-                            id={'type': 'player-image', 'index': i},
-                            style={
-                                'border-radius': '100%', 
-                                'height': '40%', 
-                                'width': '55%'
-                            }      
-                        ),
-                        html.P('{}'.format(row.total_points_y), style={"color": "white"})
-                    ])
-                    for i, row in df.iterrows()
-                ])],
-                width=3, align='center'
-            )
-            away_cards.append(card)
-        
-        home_cards = []
-        for df in home_df_list:
-            card = dbc.Col(children=[
-                
-                    html.Div([
-                        html.Div([
-                            html.Img(
-                                src='{}'.format(row.photo), 
-                                id={'type': 'player-image', 'index': i},
-                                style={
-                                    'border-radius': '100%', 
-                                    'height': '40%', 
-                                    'width': '55%'
-                                }      
-                            ),
-                            html.P('{}'.format(row.total_points_y), style={"color": "white"})
-                        ])
-                        for i, row in df.iterrows()
-                    ])],
-                width=3, align='center'
-            )
-            home_cards.append(card)
+        home_def_content = html.Div([
+            html.Div([
+                html.Img(
+                    src=row.photo,
+                    id={'type': 'player-image', 'player_id': row.element},
+                    style={'border-radius': '100%', 'height': '50px', 'width': '50px'}
+                ),
+                html.P(row.total_points_y, style={"color": "white"})
+            ]) for row in home_defender.itertuples()
+        ], style={'textAlign': 'center'})
 
-        home_sub_cards=[]
+        home_mid_content = html.Div([
+            html.Div([
+                html.Img(
+                    src=row.photo,
+                    id={'type': 'player-image', 'player_id': row.element},
+                    style={'border-radius': '100%', 'height': '50px', 'width': '50px'}
+                ),
+                html.P(row.total_points_y, style={"color": "white"})
+            ]) for row in home_midfielder.itertuples()
+        ], style={'textAlign': 'center'})
 
+        home_fwd_content = html.Div([
+            html.Div([
+                html.Img(
+                    src=row.photo,
+                    id={'type': 'player-image', 'player_id': row.element},
+                    style={'border-radius': '100%', 'height': '50px', 'width': '50px'}
+                ),
+                html.P(row.total_points_y, style={"color": "white"})
+            ]) for row in home_forward.itertuples()
+        ], style={'textAlign': 'center'})
+
+        away_fwd_content = html.Div([
+            html.Div([
+                html.Img(
+                    src=row.photo,
+                    id={'type': 'player-image', 'player_id': row.element},
+                    style={'border-radius': '100%', 'height': '50px', 'width': '50px'}
+                ),
+                html.P(row.total_points_y, style={"color": "white"})
+            ]) for row in away_forward.itertuples()
+        ], style={'textAlign': 'center'})
+
+        away_mid_content = html.Div([
+            html.Div([
+                html.Img(
+                    src=row.photo,
+                    id={'type': 'player-image', 'player_id': row.element},
+                    style={'border-radius': '100%', 'height': '50px', 'width': '50px'}
+                ),
+                html.P(row.total_points_y, style={"color": "white"})
+            ]) for row in away_midfielder.itertuples()
+        ], style={'textAlign': 'center'})
+
+        away_def_content = html.Div([
+            html.Div([
+                html.Img(
+                    src=row.photo,
+                    id={'type': 'player-image', 'player_id': row.element},
+                    style={'border-radius': '100%', 'height': '50px', 'width': '50px'}
+                ),
+                html.P(row.total_points_y, style={"color": "white"})
+            ]) for row in away_defender.itertuples()
+        ], style={'textAlign': 'center'})
+
+        away_gk_content = html.Div([
+            html.Div([
+                html.Img(
+                    src=row.photo,
+                    id={'type': 'player-image', 'player_id': row.element},
+                    style={'border-radius': '100%', 'height': '50px', 'width': '50px'}
+                ),
+                html.P(row.total_points_y, style={"color": "white"})
+            ]) for row in away_goalkeeper.itertuples()
+        ], style={'textAlign': 'center'})
+
+        home_sub_cards = []
         for i, row in home_players_subs.iterrows():
             card = dbc.Col(children=[
                 html.Img(
-                    src='{}'.format(row.photo), 
-                    id={'type': 'player-image', 'index': i},
-                    style={
-                        'border-radius': '100%', 
-                        'height': '40%', 
-                        'width': '55%'
-                    }
+                    src=row.photo,
+                    id={'type': 'player-image', 'player_id': row.element},
+                    style={'border-radius': '100%', 'height': '50px', 'width': '50px'}
                 ),
-                html.P('{}'.format(row.total_points_y), style={"color": "white"})
+                html.P(row.total_points_y, style={"color": "white"})
             ], width=3, align='center')
             home_sub_cards.append(card)
-        
-        away_sub_cards=[]
 
+        away_sub_cards = []
         for i, row in away_players_subs.iterrows():
             card = dbc.Col(children=[
                 html.Img(
-                    src='{}'.format(row.photo), 
-                    id={'type': 'player-image', 'index': i},
-                    style={
-                        'border-radius': '100%', 
-                        'height': '40%', 
-                        'width': '55%'
-                    }
+                    src=row.photo,
+                    id={'type': 'player-image', 'player_id': row.element},
+                    style={'border-radius': '100%', 'height': '50px', 'width': '50px'}
                 ),
-                html.P('{}'.format(row.total_points_y), style={"color": "white"})
+                html.P(row.total_points_y, style={"color": "white"})
             ], width=3, align='center')
             away_sub_cards.append(card)
 
-        return html.Div(children=[
-                    dbc.Row(                                  
-                            home_cards, justify='end'                                
-                        ),
-                        dbc.Row(
-                        home_sub_cards
-                        )]
-        ), html.Div(children=[
-                    dbc.Row(                                  
-                            away_cards, justify='end'                                
-                        ),
-                        dbc.Row(
-                        away_sub_cards
-                        )]
-        )
+        home_subs_content = dbc.Row(home_sub_cards, justify='center')
+        away_subs_content = dbc.Row(away_sub_cards, justify='center')
+
+        all_subs_content = html.Div([
+            home_subs_content,
+            away_subs_content
+        ])
+
+        return (home_gk_content, home_def_content, home_mid_content, home_fwd_content,
+                away_fwd_content, away_mid_content, away_def_content, away_gk_content,
+                all_subs_content,
+                home_players_df.to_dict('records'), away_players_df.to_dict('records'),
+                game_df.to_dict('records'))
 
     @app.callback(
         [dash.dependencies.Output("game-drop-down", "options"),
@@ -205,3 +248,42 @@ def register_gameweek_callbacks(app, players_df, teams_df, all_history_df):
         f_df = f_df.loc[f_df.finished_provisional==True]
         options = [{'label': d['fixture_title'], 'value': d['fixture_title']} for d in f_df.to_dict('records')]
         return options, options[0]['value'] if options else None
+
+    @app.callback(
+        dash.dependencies.Output("player-stats-modal", "is_open"),
+        dash.dependencies.Output("player-stats-content", "children"),
+        dash.dependencies.Input({"type": "player-image", "player_id": dash.dependencies.ALL}, "n_clicks"),
+        dash.dependencies.Input("close-modal", "n_clicks"),
+        dash.dependencies.State("game-data", "data"),
+        prevent_initial_call=True
+    )
+    def show_player_stats(n_clicks_images, n_clicks_close, game_data):
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            return False, ""
+        trigger_id_str = ctx.triggered[0]['prop_id']
+        if 'close-modal' in trigger_id_str:
+            return False, ""
+        # parse the player_id
+        trigger_id = json.loads(trigger_id_str.split('.')[0])
+        player_id = trigger_id['player_id']
+        # find player data
+        all_data = game_data or []
+        player_data = next((p for p in all_data if p['element'] == player_id), None)
+        if not player_data:
+            return True, "Player data not found"
+        # create content
+        content = html.Div([
+            html.H5(player_data.get('web_name', 'Unknown')),
+            html.P(f"Minutes: {player_data.get('minutes', 0)}"),
+            html.P(f"Goals: {player_data.get('goals_scored', 0)}"),
+            html.P(f"Assists: {player_data.get('assists', 0)}"),
+            html.P(f"Saves: {player_data.get('saves', 0)}"),
+            html.P(f"Clean Sheets: {player_data.get('clean_sheets', 0)}"),
+            html.P(f"Yellow Cards: {player_data.get('yellow_cards', 0)}"),
+            html.P(f"Red Cards: {player_data.get('red_cards', 0)}"),
+            html.P(f"Bonus: {player_data.get('bonus', 0)}"),
+            html.P(f"Expected Goals: {player_data.get('expected_goals', 0):.2f}"),
+            html.P(f"Expected Assists: {player_data.get('expected_assists', 0):.2f}"),
+        ])
+        return True, content
