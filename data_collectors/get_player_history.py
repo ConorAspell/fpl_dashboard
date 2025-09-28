@@ -48,7 +48,7 @@ def main():
 
     # Write player data to CSV
     # Write player data to JSON file
-    bucket_name = 'fpl-bucket-2022'
+    bucket_name = 'fpl-bucket-2025'
     file_name = 'player_data.json'
     upload_to_s3(bucket_name, file_name, player_data)
 

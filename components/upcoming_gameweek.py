@@ -15,7 +15,7 @@ def upcoming(bet_df, players_df, teams_df):
     home_df=home_df.rename(columns={'home_team' : 'team', 'away_team': 'opponent', 'home_chance' : 'chance'})
     away_df=away_df.rename(columns={'away_team' : 'team', 'home_team': 'opponent', 'away_chance' : 'chance'})
     
-    graph_df = home_df.append(away_df)
+    graph_df = pd.concat([home_df, away_df], ignore_index=True)
     
     graph_df = graph_df.sort_values('chance', ascending=False)
     

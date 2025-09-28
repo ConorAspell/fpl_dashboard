@@ -41,7 +41,7 @@ def player_history(players_df, teams_df):
     
 
     selected_player = players_df.loc[players_df.web_name == "Haaland"]
-    code = selected_player.code.iat[0]
+    code = selected_player.id.iat[0]
     image_string = "https://resources.premierleague.com/premierleague/photos/players/110x140/p" + str(code) + ".png"
     id = selected_player.id.iat[0]
     history = get("https://fantasy.premierleague.com/api/element-summary/"+str(id)+"/")
@@ -61,7 +61,7 @@ def player_history(players_df, teams_df):
                         html.P("Ownership: ",style=style_sheet_2),
                         html.P(str(selected_player.selected_by_percent.iat[0]) + "%", id="player_ownership",style=style_sheet_1),
                         html.P("ICT Rank: ",style=style_sheet_2),
-                        html.P(str(selected_player.ict_index_rank.iat[0]), id="player_rank",style=style_sheet_1)], 
+                        html.P(str(selected_player.ict_index.iat[0]), id="player_rank",style=style_sheet_1)], 
                     style={"background-color" : "white"}
                 ), style={"width": "18rem", "border-radius" : "25px", "padding": "20px"}
             ), width={"size": 3, "offset" : 1}

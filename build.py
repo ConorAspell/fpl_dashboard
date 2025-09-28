@@ -5,18 +5,6 @@ from datetime import datetime
 import boto3
 import io
 
-
-columns = ['chance_of_playing_next_round', 'chance_of_playing_this_round',
- 'element_type', 'ep_next',
-       'ep_this',  'first_name', 'form', 'id', 'in_dreamteam',
-        'now_cost', 'points_per_game',
-       'second_name', 'selected_by_percent', 
-        'team', 'team_code', 'total_points', 'transfers_in',
-        'transfers_out',
-       'value_form', 'value_season', 'web_name',      
-        'influence', 'creativity', 'threat',
-       'ict_index', 'position']
-
 cum_columns = ['minutes',
        'goals_scored', 'assists', 'clean_sheets', 'goals_conceded',
        'own_goals', 'penalties_saved', 'penalties_missed', 'yellow_cards',
@@ -37,12 +25,20 @@ def get_data():
     gameweek =  fixtures_df.iloc[0].id
 
     key = "odds-gameweek-" +str(gameweek) +".csv"
-    bucket_name = "fpl-bucket-2023"
+    ssm = boto3.client('ssm', 'eu-west-1')
+    
+
+    bucket_name = ssm.get_parameter(Name="fpl_bucket_name", WithDecryption=True)['Parameter']['Value']
+    bucket_name = "fpl-bucket-2025"
     bet_df = get_df(bucket_name, key)
 
     key = "players-gameweek-" +str(gameweek) +".csv"
     players_df = get_df(bucket_name, key)
 
+    # Merge team names into players_df
+    players_df = players_df.merge(teams_df[['id', 'name']], left_on='team', right_on='id', suffixes=('', '_team'))
+    players_df['team_name'] = players_df['name']
+    players_df = players_df.drop('name', axis=1)
 
     bet_df.reset_index(inplace=True)
     bet_df['game_week'] = gameweek
@@ -50,7 +46,7 @@ def get_data():
     history = get('https://fantasy.premierleague.com/api/element-summary/318/')
     history_df = pd.DataFrame(history['history'])
 
-    all_history_df = load_player_data_from_s3('fpl-bucket-2022', 'player_data.json')
+    all_history_df = load_player_data_from_s3('fpl-bucket-2025', 'player_data.json')
 
     return bet_df, players_df, fixtures_df, gameweek, history_df,teams_df, all_history_df
 
@@ -90,7 +86,7 @@ def add_names(selected_players, names_to_add, map, team_map):
                 history[column] = pd.to_numeric(history[column])
             col_name = "cum_" + column
             history[col_name] = history[column].cumsum()
-        selected_players = selected_players.append(history)
+        selected_players = pd.concat([selected_players, history], ignore_index=True)
     return selected_players
 
 def add_seq_names(selected_players, names_to_add, map, team_map):
@@ -100,7 +96,7 @@ def add_seq_names(selected_players, names_to_add, map, team_map):
         history = pd.DataFrame(history['history'])
         history.opponent_team = history.opponent_team.map(team_map)
         history['name'] = name
-        selected_players = selected_players.append(history)
+        selected_players = pd.concat([selected_players, history], ignore_index=True)
     return selected_players
 
 
