@@ -40,7 +40,7 @@ server = app.server
 cache = Cache(app.server, config={'CACHE_TYPE': 'simple'})
 
 # Register all callbacks
-register_player_callbacks(app, players_df, cache)
+register_player_callbacks(app, players_df, all_history_df, cache)
 register_comparison_callbacks(app, players_df, cache)
 register_team_callbacks(app, players_df)
 register_gameweek_callbacks(app, players_df, teams_df, all_history_df)

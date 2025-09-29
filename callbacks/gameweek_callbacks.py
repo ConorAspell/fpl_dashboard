@@ -67,6 +67,11 @@ def register_gameweek_callbacks(app, players_df, teams_df, all_history_df):
         away_df = pd.DataFrame(away_players)
         home_df = pd.DataFrame(home_players)
         
+        player_map = dict(zip(players_df.id_x, players_df.web_name))
+        player_map_2 = dict(zip(players_df.id_x, players_df.element_type))
+        game_df = pd.concat([away_df, home_df], ignore_index=True)
+        game_df['web_name'] = game_df['element'].map(player_map)
+        game_df['element_type'] = game_df['element'].map(player_map_2)
         away_df['id_x'] = away_df['element']
         home_df['id_x'] = home_df['element']
 
@@ -75,9 +80,7 @@ def register_gameweek_callbacks(app, players_df, teams_df, all_history_df):
         
         away_players_df['photo'] = image_url_prefix + away_players_df['photo'].str.slice(start=0, stop=-3) + 'png'
         home_players_df['photo'] = image_url_prefix + home_players_df['photo'].str.slice(start=0, stop=-3) + 'png'
-
-
-        game_df = pd.concat([away_players_df, home_players_df], ignore_index=True)
+        
         away_players_df = away_players_df.sort_values('minutes', ascending=False)
         away_players_df_starters = away_players_df.iloc[:11]
         away_players_subs = away_players_df.iloc[11:]
@@ -196,35 +199,38 @@ def register_gameweek_callbacks(app, players_df, teams_df, all_history_df):
 
         home_sub_cards = []
         for i, row in home_players_subs.iterrows():
-            card = dbc.Col(children=[
+            card = html.Div(children=[
                 html.Img(
                     src=row.photo,
                     id={'type': 'player-image', 'player_id': row.element},
                     style={'border-radius': '100%', 'height': '50px', 'width': '50px'}
                 ),
-                html.P(row.total_points_y, style={"color": "white"})
-            ], width=3, align='center')
+                html.P(row.total_points_y, style={"color": "white", "margin": "5px 0"})
+            ], style={'textAlign': 'center', 'margin': '5px'})
             home_sub_cards.append(card)
 
         away_sub_cards = []
         for i, row in away_players_subs.iterrows():
-            card = dbc.Col(children=[
+            card = html.Div(children=[
                 html.Img(
                     src=row.photo,
                     id={'type': 'player-image', 'player_id': row.element},
                     style={'border-radius': '100%', 'height': '50px', 'width': '50px'}
                 ),
-                html.P(row.total_points_y, style={"color": "white"})
-            ], width=3, align='center')
+                html.P(row.total_points_y, style={"color": "white", "margin": "5px 0"})
+            ], style={'textAlign': 'center', 'margin': '5px'})
             away_sub_cards.append(card)
 
-        home_subs_content = dbc.Row(home_sub_cards, justify='center')
-        away_subs_content = dbc.Row(away_sub_cards, justify='center')
-
         all_subs_content = html.Div([
-            home_subs_content,
-            away_subs_content
-        ])
+            html.Div([
+                html.H6("Home Substitutes", style={'color': 'white', 'marginBottom': '10px', 'textAlign': 'center'}),
+                html.Div(home_sub_cards, style={'display': 'flex', 'justifyContent': 'center', 'flexWrap': 'wrap', 'gap': '8px', 'minWidth': '400px'})
+            ], style={'width': '48%', 'minWidth': '450px'}),
+            html.Div([
+                html.H6("Away Substitutes", style={'color': 'white', 'marginBottom': '10px', 'textAlign': 'center'}),
+                html.Div(away_sub_cards, style={'display': 'flex', 'justifyContent': 'center', 'flexWrap': 'wrap', 'gap': '8px', 'minWidth': '400px'})
+            ], style={'width': '48%', 'minWidth': '450px'})
+        ], style={'display': 'flex', 'justifyContent': 'space-between', 'alignItems': 'flex-start', 'flexWrap': 'wrap'})
 
         return (home_gk_content, home_def_content, home_mid_content, home_fwd_content,
                 away_fwd_content, away_mid_content, away_def_content, away_gk_content,
@@ -275,6 +281,7 @@ def register_gameweek_callbacks(app, players_df, teams_df, all_history_df):
         # create content
         content = html.Div([
             html.H5(player_data.get('web_name', 'Unknown')),
+            html.P(f"Total Points: {player_data.get('total_points', 0)}"),
             html.P(f"Minutes: {player_data.get('minutes', 0)}"),
             html.P(f"Goals: {player_data.get('goals_scored', 0)}"),
             html.P(f"Assists: {player_data.get('assists', 0)}"),
@@ -283,7 +290,7 @@ def register_gameweek_callbacks(app, players_df, teams_df, all_history_df):
             html.P(f"Yellow Cards: {player_data.get('yellow_cards', 0)}"),
             html.P(f"Red Cards: {player_data.get('red_cards', 0)}"),
             html.P(f"Bonus: {player_data.get('bonus', 0)}"),
-            html.P(f"Expected Goals: {player_data.get('expected_goals', 0):.2f}"),
-            html.P(f"Expected Assists: {player_data.get('expected_assists', 0):.2f}"),
+            html.P(f"Expected Goals: {player_data.get('expected_goals', 0)}"),
+            html.P(f"Expected Assists: {player_data.get('expected_assists', 0)}"),
         ])
         return True, content

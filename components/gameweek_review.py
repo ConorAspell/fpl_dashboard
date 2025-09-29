@@ -12,23 +12,85 @@ def gameweek_review(players_df, teams_df, gameweek):
             ]),
             html.Div(
                 style={
-                    'verticalAlign': 'middle',
-                    'textAlign': 'center',
-                    'background': 'url(https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Football_pitch_v2.svg/2560px-Football_pitch_v2.svg.png) no-repeat center center fixed',
-                    'background-size': 'cover'
+                    'position': 'relative',
+                    'width': '100%',
+                    'height': '500px',
+                    'background': 'url(https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Football_pitch_v2.svg/2560px-Football_pitch_v2.svg.png) no-repeat center center',
+                    'background-size': '95% 100%',
+                    'margin': '20px 0'
                 },
                 children=[
-                    dbc.Row([
-                        dbc.Col(id="home-gk", width=1, style={'display': 'flex', 'flexDirection': 'column', 'justifyContent': 'center', 'alignItems': 'center'}),
-                        dbc.Col(id="home-def", width=1, style={'display': 'flex', 'flexDirection': 'column', 'justifyContent': 'center', 'alignItems': 'center'}),
-                        dbc.Col(id="home-mid", width=1, style={'display': 'flex', 'flexDirection': 'column', 'justifyContent': 'center', 'alignItems': 'center'}),
-                        dbc.Col(id="home-fwd", width=1, style={'display': 'flex', 'flexDirection': 'column', 'justifyContent': 'center', 'alignItems': 'center'}),
-                        dbc.Col(id="away-fwd", width=1, style={'display': 'flex', 'flexDirection': 'column', 'justifyContent': 'center', 'alignItems': 'center'}),
-                        dbc.Col(id="away-mid", width=1, style={'display': 'flex', 'flexDirection': 'column', 'justifyContent': 'center', 'alignItems': 'center'}),
-                        dbc.Col(id="away-def", width=1, style={'display': 'flex', 'flexDirection': 'column', 'justifyContent': 'center', 'alignItems': 'center'}),
-                        dbc.Col(id="away-gk", width=1, style={'display': 'flex', 'flexDirection': 'column', 'justifyContent': 'center', 'alignItems': 'center'})
-                    ], justify='center'),
-                    dbc.Row(id="all-subs")
+                    # Home team positions (left side)
+                    html.Div(id="home-gk", style={
+                        'position': 'absolute',
+                        'left': '6%',
+                        'top': '50%',
+                        'transform': 'translate(-50%, -50%)',
+                        'textAlign': 'center'
+                    }),
+                    html.Div(id="home-def", style={
+                        'position': 'absolute',
+                        'left': '22%',
+                        'top': '50%',
+                        'transform': 'translate(-50%, -50%)',
+                        'textAlign': 'center'
+                    }),
+                    html.Div(id="home-mid", style={
+                        'position': 'absolute',
+                        'left': '38%',
+                        'top': '50%',
+                        'transform': 'translate(-50%, -50%)',
+                        'textAlign': 'center'
+                    }),
+                    html.Div(id="home-fwd", style={
+                        'position': 'absolute',
+                        'left': '47%',
+                        'top': '50%',
+                        'transform': 'translate(-50%, -50%)',
+                        'textAlign': 'center'
+                    }),
+                    # Away team positions (right side)
+                    html.Div(id="away-fwd", style={
+                        'position': 'absolute',
+                        'left': '53%',
+                        'top': '50%',
+                        'transform': 'translate(-50%, -50%)',
+                        'textAlign': 'center'
+                    }),
+                    html.Div(id="away-mid", style={
+                        'position': 'absolute',
+                        'left': '62%',
+                        'top': '50%',
+                        'transform': 'translate(-50%, -50%)',
+                        'textAlign': 'center'
+                    }),
+                    html.Div(id="away-def", style={
+                        'position': 'absolute',
+                        'left': '78%',
+                        'top': '50%',
+                        'transform': 'translate(-50%, -50%)',
+                        'textAlign': 'center'
+                    }),
+                    html.Div(id="away-gk", style={
+                        'position': 'absolute',
+                        'left': '94%',
+                        'top': '50%',
+                        'transform': 'translate(-50%, -50%)',
+                        'textAlign': 'center'
+                    })
+                ]
+            ),
+            # Substitutes section below the pitch
+            html.Div(
+                style={
+                    'marginTop': '20px',
+                    'padding': '20px',
+                    'backgroundColor': 'rgba(0, 0, 0, 0.8)',
+                    'borderRadius': '10px'
+                },
+                children=[
+                    html.H4("Substitutes", style={'color': 'white', 'textAlign': 'center', 'marginBottom': '15px'}),
+                    html.Div(id="all-subs", style={'display': 'flex', 'justifyContent': 'center', 'flexWrap': 'wrap', 'gap': '15px'})
                 ]
             ),
             dcc.Store(id='home-players-data'),

@@ -5,7 +5,7 @@ import plotly.express as px
 from build import get, add_names, remove_names, add_seq_names
 import json
 
-def register_player_callbacks(app, players_df, cache):
+def register_player_callbacks(app, players_df, all_history_df, cache):
     """Register all player-related callbacks"""
     
     @app.callback(
