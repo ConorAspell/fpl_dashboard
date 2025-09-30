@@ -14,7 +14,7 @@ def gameweek_review(players_df, teams_df, gameweek):
                 style={
                     'position': 'relative',
                     'width': '100%',
-                    'height': '500px',
+                    'height': '700px',
                     'background': 'url(https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Football_pitch_v2.svg/2560px-Football_pitch_v2.svg.png) no-repeat center center',
                     'background-size': '95% 100%',
                     'margin': '20px 0'

@@ -6,8 +6,7 @@ def Navbar():
                 dbc.NavLink("Player Compare", href="/player_compare"),
                 dbc.NavLink("Upcoming Gameweek", href="/upcoming_gameweek"),
                 dbc.NavLink("Gameweek Review", href="/gameweek_review"),
-                dbc.NavLink("Your Team", href="/"),
-                dbc.NavLink("Transfer Recommender", href="/transfer_recommender"),
+                dbc.NavLink("My Team", href="/transfer_recommender"),
                 dbc.NavLink("Donate", href="/donate"),
               
                     ],

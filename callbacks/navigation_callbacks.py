@@ -1,6 +1,8 @@
 import dash
 from dash import html
 import dash_bootstrap_components as dbc
+import pandas as pd
+import plotly.express as px
 from components.player_history import player_history
 from components.player_compare import player_compare
 from components.upcoming_gameweek import upcoming
@@ -43,3 +45,51 @@ def register_navigation_callbacks(app, players_df, teams_df, bet_df, gameweek):
                 html.P(f"The pathname {pathname} was not recognised..."),
             ]
         )
+    
+    @app.callback(
+        dash.dependencies.Output('player-ranking-chart', 'figure'),
+        [dash.dependencies.Input('element-type-filter', 'value'),
+         dash.dependencies.Input('top-players-data', 'data')]
+    )
+    def update_player_chart(selected_position, players_data):
+        """Update player ranking chart based on selected position"""
+        if not players_data:
+            return {}
+        
+        # Convert stored data back to DataFrame
+        df = pd.DataFrame(players_data)
+        
+        # Filter by position if not 'All'
+        if selected_position != 'All':
+            df = df[df['element_type'] == int(selected_position)]
+        
+        # Get top 20 players
+        df = df.head(20)
+        
+        if df.empty:
+            return {}
+        
+        # Create the bar chart
+        fig = px.bar(
+            df, 
+            x='web_name', 
+            y='ranking',
+            title=f'Top Players by Combined Score',
+            labels={'ranking': 'Player Score', 'web_name': 'Player'},
+            color='team_win_chance',
+            color_continuous_scale='RdYlGn',
+            hover_data={
+                'form': ':.1f',
+                'creativity': ':.1f', 
+                'threat': ':.1f',
+                'team_name': True,
+                'team_win_chance': ':.1f'
+            }
+        )
+        
+        fig.update_layout(
+            xaxis_tickangle=-45,
+            height=600
+        )
+        
+        return fig

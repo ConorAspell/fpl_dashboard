@@ -25,10 +25,6 @@ def get_data():
     gameweek =  fixtures_df.iloc[0].id
 
     key = "odds-gameweek-" +str(gameweek) +".csv"
-    ssm = boto3.client('ssm', 'eu-west-1')
-    
-
-    bucket_name = ssm.get_parameter(Name="fpl_bucket_name", WithDecryption=True)['Parameter']['Value']
     bucket_name = "fpl-bucket-2025"
     bet_df = get_df(bucket_name, key)
 
@@ -70,7 +66,7 @@ def get_df(bucket, key):
     return df
 
 def get(url):
-    response = requests.get(url)
+    response = requests.get(url, verify=False)
     return json.loads(response.content)
 
 def add_names(selected_players, names_to_add, map, team_map):

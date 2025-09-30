@@ -34,7 +34,7 @@ def Homepage():
 # Initialize Dash app
 app = dash.Dash(__name__, suppress_callback_exceptions=True, external_stylesheets=[dbc.themes.CYBORG])
 app.title = 'FPL Data'
-app._favicon = ("/home/conor-aspell/Documents/projects/fpl_dashboard/icon/favicon.ico")
+app._favicon = "icon/favicon.ico"
 app.layout = Homepage()
 server = app.server
 cache = Cache(app.server, config={'CACHE_TYPE': 'simple'})
@@ -42,9 +42,9 @@ cache = Cache(app.server, config={'CACHE_TYPE': 'simple'})
 # Register all callbacks
 register_player_callbacks(app, players_df, all_history_df, cache)
 register_comparison_callbacks(app, players_df, cache)
-register_team_callbacks(app, players_df)
+register_team_callbacks(app, players_df, gameweek)
 register_gameweek_callbacks(app, players_df, teams_df, all_history_df)
 register_navigation_callbacks(app, players_df, teams_df, bet_df, gameweek)
 
 if __name__ == '__main__':
-    app.run_server(debug=True, host='0.0.0.0', port=8051)
+    app.run(debug=True, host='0.0.0.0', port=8051)
