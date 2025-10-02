@@ -8,6 +8,7 @@ from components.player_compare import player_compare
 from components.upcoming_gameweek import upcoming
 from components.team_change_recommender import change_recommender
 from components.gameweek_review import gameweek_review
+from components.ai_advisor import create_ai_advisor_layout
 
 def register_navigation_callbacks(app, players_df, teams_df, bet_df, gameweek):
     """Register navigation and page routing callbacks"""
@@ -36,6 +37,9 @@ def register_navigation_callbacks(app, players_df, teams_df, bet_df, gameweek):
 
         elif pathname == "/gameweek_review":
             return gameweek_review(players_df, teams_df, gameweek-1)
+        
+        elif pathname == "/ai_advisor":
+            return create_ai_advisor_layout()
                     
         # If the user tries to reach a different page, return a 404 message
         return dbc.Jumbotron(

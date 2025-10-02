@@ -13,6 +13,7 @@ from callbacks.comparison_callbacks import register_comparison_callbacks
 from callbacks.team_callbacks import register_team_callbacks
 from callbacks.gameweek_callbacks import register_gameweek_callbacks
 from callbacks.navigation_callbacks import register_navigation_callbacks
+from callbacks.ai_advisor_callbacks import register_ai_advisor_callbacks
 
 # Load data
 df = pd.DataFrame()
@@ -45,6 +46,9 @@ register_comparison_callbacks(app, players_df, cache)
 register_team_callbacks(app, players_df, gameweek)
 register_gameweek_callbacks(app, players_df, teams_df, all_history_df)
 register_navigation_callbacks(app, players_df, teams_df, bet_df, gameweek)
+
+# Register AI Advisor callbacks with AWS Lambda endpoint
+register_ai_advisor_callbacks(app)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8051)

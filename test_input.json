@@ -1,0 +1,85 @@
+{
+  "resource": "/team-change-recommender",
+  "path": "/team-change-recommender",
+  "httpMethod": "POST",
+  "headers": {
+    "accept": "application/json",
+    "accept-encoding": "gzip, deflate, br",
+    "accept-language": "en-US,en;q=0.9",
+    "content-type": "application/json",
+    "Host": "3mysfk56w8.execute-api.eu-west-1.amazonaws.com",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.41 Safari/537.36",
+    "X-Amzn-Trace-Id": "Root=1-626d909c-6a6e165d490e31db01996777",
+    "X-Forwarded-For": "109.255.199.83",
+    "X-Forwarded-Port": "443",
+    "X-Forwarded-Proto": "https"
+  },
+  "multiValueHeaders": {
+    "accept": [
+      "application/json"
+    ],
+    "accept-encoding": [
+      "gzip, deflate, br"
+    ],
+    "accept-language": [
+      "en-US,en;q=0.9"
+    ],
+    "content-type": [
+      "application/json"
+    ],
+    "Host": [
+      "3mysfk56w8.execute-api.eu-west-1.amazonaws.com"
+    ],
+    "User-Agent": [
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.41 Safari/537.36"
+    ],
+    "X-Amzn-Trace-Id": [
+      "Root=1-626d909c-6a6e165d490e31db01996777"
+    ],
+    "X-Forwarded-For": [
+      "109.255.199.83"
+    ],
+    "X-Forwarded-Port": [
+      "443"
+    ],
+    "X-Forwarded-Proto": [
+      "https"
+    ]
+  },
+  "queryStringParameters": null,
+  "multiValueQueryStringParameters": null,
+  "pathParameters": null,
+  "stageVariables": null,
+  "requestContext": {
+    "resourceId": "7eyj9g",
+    "resourcePath": "/team-change-recommender",
+    "httpMethod": "POST",
+    "extendedRequestId": "RaOIbG2PjoEFkEg=",
+    "requestTime": "01/Oct/2025:10:00:00 +0000",
+    "path": "/1/team-change-recommender",
+    "accountId": "090125754218",
+    "protocol": "HTTP/1.1",
+    "stage": "1",
+    "domainPrefix": "3mysfk56w8",
+    "requestTimeEpoch": 1727780400000,
+    "requestId": "6b197344-6780-470b-9b67-7885493756ba",
+    "identity": {
+      "cognitoIdentityPoolId": null,
+      "accountId": null,
+      "cognitoIdentityId": null,
+      "caller": null,
+      "sourceIp": "109.255.199.83",
+      "principalOrgId": null,
+      "accessKey": null,
+      "cognitoAuthenticationType": null,
+      "cognitoAuthenticationProvider": null,
+      "userArn": null,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.41 Safari/537.36",
+      "user": null
+    },
+    "domainName": "3mysfk56w8.execute-api.eu-west-1.amazonaws.com",
+    "apiId": "3mysfk56w8"
+  },
+  "body": "{\"team_id\": \"1192105\", \"persona\": \"pundit\", \"gameweek\": 7}",
+  "isBase64Encoded": false
+}
